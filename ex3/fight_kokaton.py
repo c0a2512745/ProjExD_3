@@ -1,3 +1,4 @@
+import math
 import os
 import random
 import sys
@@ -56,6 +57,7 @@ class Bird:
         self.img = __class__.imgs[(+5, 0)]
         self.rct: pg.Rect = self.img.get_rect()
         self.rct.center = xy
+        self.dire = (+5, 0)  # 4：こうかとんの向きを表すタプルの定義
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -82,6 +84,7 @@ class Bird:
             self.rct.move_ip(-sum_mv[0], -sum_mv[1])
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.img = __class__.imgs[tuple(sum_mv)]
+            self.dire = tuple(sum_mv) # 4：合計移動量が[0,0]でないとき、self.direをsum_mvで更新
         screen.blit(self.img, self.rct)
 
 
@@ -98,7 +101,16 @@ class Beam:
         self.rct = self.img.get_rect()
         self.rct.centery = bird.rct.centery  # ビームの中心縦座標 = こうかとんの中心縦座標
         self.rct.left = bird.rct.right  #ビームの左座標 = こうかとんの右座標
-        self.vx, self.vy = +5, 0
+        # self.vx, self.vy = +5, 0
+        self.vx, self.vy = bird.dire  # 4：Birdのdireで、こうかとんが向いている方向を代入
+        sita = math.atan2(-self.vy, self.vx)  #4：角度Θに変換
+        dosuu = math.degrees(sita)  #4：度数法に変換
+        self.img = pg.transform.rotozoom(self.img, dosuu, 1.0)  # 4：画像回転
+        self.rct = self.img.get_rect()  # 4：画像の位置を取得
+        self.rct.centerx = bird.rct.centerx + bird.rct.width * self.vx / 5  # 4：こうかとんの色々考慮した初期配置x
+        self.rct.centery = bird.rct.centery + bird.rct.height * self.vy / 5  # 4：こうかとんの色々考慮した初期配置y
+
+
 
     def update(self, screen: pg.Surface):
         """
@@ -182,6 +194,28 @@ class Explosion:
             img = self.img_exs[self.life % 2]
             screen.blit(img, self.rct)
 
+
+class Explosion:
+    """
+    爆発エフェクトをつけるクラス
+    """
+    def __init__(self, bomb: Bomb):
+        img_ex1 = pg.image.load("fig/explosion.gif")
+        img_ex2 = pg.transform.flip(img_ex1, True, True)
+        self.img_exs = [img_ex1, img_ex2]
+        self.rct = img_ex1.get_rect()
+        self.rct.center = bomb.rct.center
+        self.life = 20
+
+    def update(self, screen: pg.Surface):
+        """
+        爆発時間をいじって爆発エフェクトを交互に切り替えて爆発を演出
+        """
+        self.life -= 1
+        if self.life > 0:
+            img = self.img_exs[self.life % 2]
+            screen.blit(img, self.rct)
+            
 
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
