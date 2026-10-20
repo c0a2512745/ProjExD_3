@@ -170,8 +170,9 @@ def main():
     # for _ in range(NUM_OF_BOMBS):
     #     bombs.append(Bomb((255, 0, 0), 10))  #練習5の汚いほうの書き方
     bombs = [Bomb((255, 0, 0), 10) for _ in range(NUM_OF_BOMBS)]  #練習5の美しいほうの書き方
-    beam = None  # ゲーム初期化時にはビームは存在しない
-    score = Score()  # Scoreインスタンスの作成
+    # beam = None  # ゲーム初期化時にはビームは存在しない
+    beams = []  # 2-1：Beamクラスを複数扱うための空のリスト
+    score = Score()  # 1：Scoreインスタンスの作成
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -180,7 +181,8 @@ def main():
                 return
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 # スペースキー押下でBeamクラスのインスタンス生成
-                beam = Beam(bird)         
+                # beam = Beam(bird)
+                beams.append(Beam(bird))  # 2-2：スペースキーを押してBeamインスタンス生成し、リストにアペンド      
         screen.blit(bg_img, [0, 0])
 
         for bomb in bombs:
@@ -195,18 +197,23 @@ def main():
                 return
 
         for i, bomb in enumerate(bombs):
-            if beam is not None:
-                if beam.rct.colliderect(bomb.rct):  # ビームと爆弾の衝突判定
-                    beam = None
-                    bombs[i] = None
-                    bird.change_img(6, screen)  # よろこびエフェクト
-                    score.score += 1  # 爆弾を打ち落としたらスコアを+1する
-                    pg.display.update()
+            for j, beam in enumerate(beams):
+                if bomb is not None and beam is not None:
+                    if beam.rct.colliderect(bomb.rct):  # ビームと爆弾の衝突判定
+                        beams[j] = None  # 2：当たったビームをNoneにする
+                        bombs[i] = None
+                        bird.change_img(6, screen)  # よろこびエフェクト
+                        score.score += 1  # 爆弾を打ち落としたらスコアを+1する
+                        pg.display.update()
+                        break
         bombs = [bomb for bomb in bombs if bomb is not None]  # Noneを取り除いたもの
+
+        beams = [beam for beam in beams if beam is not None]  # Noneを取り除いたもの
+        beams = [beam for beam in beams if check_bound(beam.rct) == (True, True)]  # 画面外に出たものを取り除く
 
         key_lst = pg.key.get_pressed()
         bird.update(key_lst, screen)
-        if beam is not None:
+        for beam in beams:
             beam.update(screen)
         for bomb in bombs:
             bomb.update(screen)
