@@ -147,7 +147,7 @@ class Score:
     """
     def __init__(self):
         self.fonto = pg.font.Font(None, 50)
-        self.color = (0,0,255)
+        self.color = (0, 0, 255)
         self.score = 0
         self.img = self.fonto.render("Score:0", 0 , self.color)
         self.rct = self.img.get_rect()
