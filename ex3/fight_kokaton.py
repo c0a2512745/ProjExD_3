@@ -160,6 +160,29 @@ class Score:
         self.img = self.fonto.render(f"Score:{self.score}", 0 , self.color)
         screen.blit(self.img, self.rct)
 
+
+class Explosion:
+    """
+    爆発エフェクトをつけるクラス
+    """
+    def __init__(self, bomb: Bomb):
+        img_ex1 = pg.image.load("fig/explosion.gif")
+        img_ex2 = pg.transform.flip(img_ex1, True, True)
+        self.img_exs = [img_ex1, img_ex2]
+        self.rct = img_ex1.get_rect()
+        self.rct.center = bomb.rct.center
+        self.life = 20
+
+    def update(self, screen: pg.Surface):
+        """
+        爆発時間をいじって爆発エフェクトを交互に切り替えて爆発を演出
+        """
+        self.life -= 1
+        if self.life > 0:
+            img = self.img_exs[self.life % 2]
+            screen.blit(img, self.rct)
+
+
 def main():
     pg.display.set_caption("たたかえ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))    
@@ -173,6 +196,7 @@ def main():
     # beam = None  # ゲーム初期化時にはビームは存在しない
     beams = []  # 2-1：Beamクラスを複数扱うための空のリスト
     score = Score()  # 1：Scoreインスタンスの作成
+    explosion = []  # 3：Explosion用の空のリスト
     clock = pg.time.Clock()
     tmr = 0
     while True:
@@ -200,6 +224,7 @@ def main():
             for j, beam in enumerate(beams):
                 if bomb is not None and beam is not None:
                     if beam.rct.colliderect(bomb.rct):  # ビームと爆弾の衝突判定
+                        explosion.append(Explosion(bomb))  # 3：衝突したらExplosionインスタンスを作成しアペンド
                         beams[j] = None  # 2：当たったビームをNoneにする
                         bombs[i] = None
                         bird.change_img(6, screen)  # よろこびエフェクト
@@ -209,14 +234,17 @@ def main():
         bombs = [bomb for bomb in bombs if bomb is not None]  # Noneを取り除いたもの
 
         beams = [beam for beam in beams if beam is not None]  # Noneを取り除いたもの
-        beams = [beam for beam in beams if check_bound(beam.rct) == (True, True)]  # 画面外に出たものを取り除く
+        beams = [beam for beam in beams if check_bound(beam.rct) == (True, True)]  # 2：画面外に出たものを取り除く
+        explosion = [ex for ex in explosion if ex.life > 0]  # 3：lifeが0より大きいEeplosionインスタンスだけのリストにする
 
         key_lst = pg.key.get_pressed()
         bird.update(key_lst, screen)
         for beam in beams:
             beam.update(screen)
-        for bomb in bombs:
+        for bomb in bombs:  # 2：爆弾を描画
             bomb.update(screen)
+        for ex in explosion:  # 3：爆発を描画
+            ex.update(screen)
         score.update(screen)  # スコアを画面に表示
         pg.display.update()
         tmr += 1
